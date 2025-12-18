@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sora Watermark</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #0a0a0a;
+  --panel: #0f0f0f;
+  --line: #1e1e1e;
+  --text: #f2f2f2;
+  --muted: #8a8a8a;
+  --accent: #6ee7ff;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow-x: hidden;
+}
+
+.page {
+  width: 100%;
+  max-width: 1100px;
+  padding: 48px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeIn 0.8s forwards;
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.left h1 {
+  font-size: 44px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  opacity: 0;
+  transform: translateY(-20px);
+  animation: slideIn 0.8s forwards 0.2s;
+}
+
+.left p {
+  margin-top: 18px;
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 420px;
+  opacity: 0;
+  transform: translateY(-20px);
+  animation: slideIn 0.8s forwards 0.4s;
+}
+
+@keyframes slideIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.meta {
+  margin-top: 36px;
+  font-size: 13px;
+  color: var(--muted);
+  opacity: 0;
+  transform: translateY(-20px);
+  animation: slideIn 0.8s forwards 0.6s;
+}
+
+.right {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 28px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeIn 0.8s forwards 0.8s;
+}
+
+.upload {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 24px;
+  transition: transform 0.2s;
+}
+
+.upload button {
+  width: 100%;
+  background: transparent;
+  color: var(--text);
+  border: none;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.upload button:hover {
+  color: var(--accent);
+  transform: translateX(4px);
+}
+
+.upload span {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+video {
+  width: 100%;
+  margin-top: 22px;
+  border-radius: 18px;
+  background: #000;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+.actions {
+  margin-top: 22px;
+}
+
+.actions button {
+  width: 100%;
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.primary {
+  background: #ffffff;
+  color: #000000;
+}
+
+.primary:hover:not(:disabled) {
+  transform: scale(1.02);
+  background: #f0f0f0;
+}
+
+.primary:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.status {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.status.processing {
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+@media (max-width: 900px) {
+  .page {
+    grid-template-columns: 1fr;
+    padding: 28px;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="page">
+
+  <div class="left">
+    <h1>Sora-style watermarking,<br>done quietly.</h1>
+    <p>
+      Upload a video and apply a subtle Sora-style AI watermark.
+      Nothing extra. No accounts. No branding clutter.
+    </p>
+    <div class="meta">
+      Fan-made • Not affiliated with OpenAI
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="upload">
+      <input type="file" id="videoInput" accept="video/*" hidden />
+      <button onclick="document.getElementById('videoInput').click()">
+        Upload video
+        <span>MP4, MOV, WebM</span>
+      </button>
+    </div>
+
+    <video id="preview" controls hidden></video>
+
+    <div class="actions">
+      <button class="primary" id="applyBtn" disabled>
+        Apply watermark
+      </button>
+    </div>
+
+    <div class="status" id="status"></div>
+  </div>
+
+</div>
+
+<script>
+const input = document.getElementById("videoInput");
+const preview = document.getElementById("preview");
+const applyBtn = document.getElementById("applyBtn");
+const status = document.getElementById("status");
+const uploadDiv = document.querySelector(".upload");
+
+// Handle file selection
+function handleFile(file) {
+  if (!file) return;
+
+  preview.src = URL.createObjectURL(file);
+  preview.hidden = false;
+  setTimeout(() => preview.style.opacity = 1, 50);
+
+  applyBtn.disabled = false;
+  status.textContent = "Video loaded.";
+  status.classList.remove("processing");
+}
+
+// Input change (click-to-upload)
+input.onchange = () => handleFile(input.files[0]);
+
+// Drag & drop events
+uploadDiv.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  uploadDiv.style.background = "#1a1a1a"; // highlight
+});
+
+uploadDiv.addEventListener("dragleave", (e) => {
+  e.preventDefault();
+  uploadDiv.style.background = "transparent"; // remove highlight
+});
+
+uploadDiv.addEventListener("drop", (e) => {
+  e.preventDefault();
+  uploadDiv.style.background = "transparent";
+
+  const file = e.dataTransfer.files[0];
+  if (!file || !file.type.startsWith("video/")) {
+    alert("Please drop a valid video file.");
+    return;
+  }
+
+  input.files = e.dataTransfer.files; // update input for upload
+  handleFile(file);
+});
+
+// Apply watermark
+applyBtn.onclick = async () => {
+  if (!input.files.length) return;
+
+  const file = input.files[0];
+  const formData = new FormData();
+  formData.append('video', file);
+
+  status.textContent = "Uploading & processing…";
+  status.classList.add("processing");
+  applyBtn.disabled = true;
+
+  try {
+    const response = await fetch('/upload', { method: 'POST', body: formData });
+    if (!response.ok) throw new Error("Processing failed");
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sora_video.mp4';
+    a.click();
+
+    status.textContent = "Done! Video downloaded.";
+  } catch (err) {
+    console.error(err);
+    status.textContent = "Error processing video.";
+  } finally {
+    status.classList.remove("processing");
+    applyBtn.disabled = false;
+  }
+};
+</script>
+
+
+
+</body>
+</html>
