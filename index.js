@@ -12,10 +12,9 @@ const portraitWatermark = path.join(__dirname, "watermark_portrait.mp4");
 const landscapeWatermark = path.join(__dirname, "watermark_landscape.mp4");
 
 // Set full path to your ffmpeg and ffprobe
-const ffmpegPath =
-  "C:\\Users\\enivi\\Documents\\ffmpeg-n8.0-latest-win64-gpl-shared-8.0\\ffmpeg-n8.0-latest-win64-gpl-shared-8.0\\bin\\ffmpeg.exe";
-const ffprobePath =
-  "C:\\Users\\enivi\\Documents\\ffmpeg-n8.0-latest-win64-gpl-shared-8.0\\ffmpeg-n8.0-latest-win64-gpl-shared-8.0\\bin\\ffprobe.exe";
+const ffmpegPath = require("ffmpeg-static");
+const ffprobePath = require("ffprobe-static").path;
+
 
 
 // Ensure folders exist
@@ -93,3 +92,4 @@ const filter = `[1:v]scale=${width}:${height},chromakey=0x00FF00:0.00001:1[wm];[
 app.listen(port, () => {
   console.log(`Sora Watermark server running at http://localhost:${port}`);
 });
+
